@@ -140,9 +140,9 @@ run:
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/pretrain/train_FeMaSR_lib.yml --auto_resume
 ```
 
-### <a name="finetune"></a> If you want to finetune a pre-trained universal model for a specific lens or perform unsupervised finetuning using our DA pipeline-Finetuning and DA Phase
+### If you want to finetune a pre-trained universal model for a specific lens or perform unsupervised finetuning using our DA pipeline-Finetuning and DA Phase
 
-### Lens-Specific Finetuning
+### <a name="finetune"></a> Lens-Specific Finetuning
 
 #### Step1: Prepare Your Specific Data
 
@@ -166,7 +166,7 @@ run:
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/specific/train_FemaSR_Specific.yml --auto_resume
 ```
 
-### Lens-Specific DA-Training
+### <a name="DA_Training"></a> Lens-Specific DA-Training
 
 #### Step1: Prepare LensLib Data and the Unpaired Data
 Following the instructions in [LensLib Data]("lenslib_data") to prepare AODLib-EAOD （**only DA-Training needed**). 
