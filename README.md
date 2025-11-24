@@ -53,7 +53,7 @@ A flexible framework that serves **any optical lens aberration correction**. Whe
 
 ### What can OmniLens do?
 * **For users without optical expertise:**
-    OmniLens provides pre-trained models, and direct zero-shot [inference](#inference) can address many lens aberration degradation cases. In addition, you can simply capture 25 to 50 images with the target system and use our framework’s [DA-Training](#DA_Training) mode to quickly adapt the model to your optical system.
+    OmniLens provides pre-trained models, and direct zero-shot [inference](#inference) can address many lens aberration degradation cases. In addition, you can simply capture 25 to 50 images with the target system and use our framework’s [DA-Training](#DATraining) mode to quickly adapt the model to your optical system.
 * **For users targeting at lens-specific aberration correction (non-blind):**
     OmniLens serves as a strong pre-training foundation that boosts lens-specific models while markedly reducing specific data needs and training time. You can load the [OmniLens pre-trained weights](#finetune) and finetune on your own lens data, or use our released dataset to [train a pre-training model](#pretrain) that matches your chosen architecture.
 * **For researchers of blind aberration correction:**
@@ -166,7 +166,7 @@ run:
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/specific/train_FemaSR_Specific.yml --auto_resume
 ```
 
-### <a name="DA_Training"></a> Lens-Specific DA-Training
+### <a name="DATraining"></a> Lens-Specific DA-Training
 
 #### Step1: Prepare LensLib Data and the Unpaired Data
 Following the instructions in [LensLib Data]("lenslib_data") to prepare AODLib-EAOD （**only DA-Training needed**). 
