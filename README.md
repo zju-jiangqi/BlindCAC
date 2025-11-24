@@ -210,7 +210,7 @@ PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt
 **For FeMaSR**
 run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/test.py -opt options/test/test_FeMaSR.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/test_FeMaSR.yml --auto_resume
 ```
 
 ## :smile: Acknowledgement
