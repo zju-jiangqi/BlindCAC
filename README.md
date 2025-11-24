@@ -1,50 +1,93 @@
-# Quantized Domain-Mixing Representation
+<h2 align="center">OmniLens: Towards Universal Lens Aberration Correction via LensLib-to-Specific Domain Adaptation</h2>
 
-### [Paper](https://arxiv.org/pdf/2403.10012.pdf)
+<div align="center">
 
-> **Real-world Computational Aberration Correction via Quantized Domain-Mixing Representation** <br>
-> Qi Jiang, Zhonghua Yi, Shaohua Gao, Yao Gao et al. <br>
+<a href="https://arxiv.org/abs/2409.05809"><img src="https://img.shields.io/badge/ArXiv-2409.05809-red"></a>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-### Abstract
 
-Relying on paired synthetic data, existing learning-based Computational Aberration Correction (CAC) methods are confronted with the intricate and multifaceted synthetic-to-real domain gap, which leads to suboptimal performance in real-world applications. In this paper, in contrast to improving the simulation pipeline, we deliver a novel insight into real-world CAC from the perspective of Unsupervised Domain Adaptation (UDA). By incorporating readily accessible unpaired real-world data into training, we formalize the Domain Adaptive CAC (DACAC) task, and then introduce a comprehensive Real-world aberrated images (Realab) dataset to benchmark it. The setup task presents a formidable challenge due to the intricacy of understanding the target aberration domain. To this intent, we propose a novel Quantized Domain-Mixing Representation (QDMR) framework as a potent solution to the issue. QDMR adapts the CAC model to the target domain from three key aspects: (1) reconstructing aberrated images of both domains by a VQGAN to learn a Domain-Mixing Codebook (DMC) which characterizes the degradation-aware priors; (2) modulating the deep features in CAC model with DMC to transfer the target domain knowledge; and (3) leveraging the trained VQGAN to generate pseudo target aberrated images from the source ones for convincing target domain supervision. Extensive experiments on both synthetic and real-world benchmarks reveal that the models with QDMR consistently surpass the competitive methods in mitigating the synthetic-to-real gap, which produces visually pleasant real-world CAC results with fewer artifacts.
+[Qi Jiang]()<sup>1\*</sup>, [Yao Gao]()<sup>1,\*</sup>, [Shaohua Gao]()<sup>1</sup>, [Zhonghua Yi]()<sup>1</sup>, [Xiaolong Qian]()<sup>1</sup>, [Hao Shi]()<sup>1</sup>, [Kailun Yang]()<sup>2,3</sup>, [Lei Sun]()<sup>1,4</sup>, [Kaiwei Wang]()<sup>1</sup>, [Jian Bai]()<sup>1</sup>
 
-Overall illustration of our work:
+<sup>1</sup>State Key Laboratory of Extreme Photonics and Instrumentation, College of Optical Science and Engineering, Zhejiang University<br> <sup>2</sup>School of Artificial Intelligence and Robotics, Hunan University<br> <sup>3</sup>National Engineering Research Center of Robot Visual Perception and Control Technology, Hunan University<br><sup>4</sup>Sofia University St. ``Kliment Ohridski'', INSAIT<br>* Equal contribution.
+</div>
 
-![work](figure/work.png)
+:star: If OmniLens is helpful for you, please help star this repo. Thanks!
 
-### The novel DACAC task and Realab dataset
-Overall illustration of the task:
 
-![task](figure/task.png)
+## :book: Table Of Contents
 
-We solve a significant issue of synthetic-to-real gap in real-world computational aberration correction, from a novel perspective of unsupervised domain adaptation, where the unpaired (unlabeled) real-world aberrated images are incorporated into the training process. 
-For more details, please refer to our paper.
+- [Update](#update)
+- [TODO](#todo)
+- [Abstract](#abstract)
+- [Introduction](#introduction)
+- [Results](#results)
+- [Setup](#setup)
+- [LensLib Data](#lenslib_data)
+- [Training](#training)
+- [Inference](#inference)
 
-To obtain the Realab dataset, please follow this [instruction](datasets/README.md).
+<!-- - [Installation](#installation)
+- [Inference](#inference) -->
 
-### QDMR: a novel framework for DACAC task
-Overall illustration of QDMR:
+## <a name="update"></a>:new: Update
 
-![qdmroverview](figure/qdmroverview.png)
+- **2025.11.24**: The AODLib-EAOD is released :fire:
+- **2025.11.24**: The DA-Training code is released :fire:
+- **2025.11.24**: This repo is released :fire:
+<!-- - [**History Updates** >]() -->
 
-QDMR adapts the CAC model to the target domain from three key aspects: (1) reconstructing aberrated images of both domains by a VQGAN to learn a Domain-Mixing Codebook (DMC) which characterizes the degradation-aware priors; (2) modulating the deep features in CAC model with DMC to transfer the target domain knowledge; and (3) leveraging the trained VQGAN to generate pseudo target aberrated images from the source ones for convincing target domain supervision.
+## <a name="todo"></a>:hourglass: TODO
+- [ ] Release Test Images
+- [ ] Release Lens Data for AODLib-EAOD
+- [ ] Release Code for EAOD
 
-### Excellent performance on DACAC task
-QDMR can effectively mitigate the synthetic-to-real gap issue in real-world CAC, producing realistic aberration-free images without artifacts.
+## <a name="abstract"></a>:fireworks: Abstract
 
-![synresults](figure/synresults.png)
-![realresults](figure/realresults.png)
+> Emerging universal Computational Aberration Correction (CAC) paradigms provide an inspiring solution to light-weight and high-quality imaging with a universal model trained on a lens library (LensLib) to address arbitrary lens optical aberrations blindly. However, the limited coverage of existing LensLibs leads to poor generalization of the trained models to unseen lenses, whose fine-tuning pipeline is also confined to the lens-descriptions-known case. In this work, we introduce **OmniLens**, a flexible solution to universal CAC via (i) establishing a convincing LensLib with comprehensive coverage for pre-training a robust base model, and (ii) adapting the model to any specific lens designs with unknown lens descriptions via fast LensLib-to-specific domain adaptation. To achieve these, an Evolution-based Automatic Optical Design (EAOD) pipeline is proposed to generate a rich variety of lens samples with realistic aberration behaviors. Then, we design an unsupervised regularization term for efficient domain adaptation on a few easily accessible real-captured images based on the statistical observation of dark channel priors in degradation induced by lens aberrations. Extensive experiments demonstrate that the LensLib generated by EAOD effectively develops a universal CAC model with strong generalization capabilities, which can also improve the non-blind lens-specific methods by 0.35~1.81dB in PSNR. Additionally, the proposed domain adaptation method significantly improves the base model, especially in severe aberration cases (at most 2.59dB in PSNR).
 
-More details can be found in our paper.
+## <a name="introduction"></a>:eyes: Introduction
 
-#### Getting started
+<img src=picture/main_framework.jpg>
+
+### What is OmniLens?
+A flexible framework that serves **any optical lens aberration correction**. Whether or not you know the specific lens design, you can benefit from OmniLens. It supports **zero‑shot correction** of unknown lenses and can also act as **a pretrained model** to enable better designs of lens‑specific aberration correction models. In addition, OmniLens is the first to show that **with only a pretrained model and a few casually captured images of the target optical system**, unsupervised domain adaptation finetuning can yield impressive real‑world results.
+
+### What can OmniLens do?
+* **For users without optical expertise:**
+    OmniLens provides pre-trained models, and direct zero-shot [inference](#inference) can address many lens aberration degradation cases. In addition, you can simply capture 25 to 50 images with the target system and use our framework’s [DA-Training](#DA_Training) mode to quickly adapt the model to your optical system.
+* **For users targeting at lens-specific aberration correction (non-blind):**
+    OmniLens serves as a strong pre-training foundation that boosts lens-specific models while markedly reducing specific data needs and training time. You can load the [OmniLens pre-trained weights](#finetune) and finetune on your own lens data, or use our released dataset to [train a pre-training model](#pretrain) that matches your chosen architecture.
+* **For researchers of blind aberration correction:**
+    OmniLens releases the [AODLib‑EAOD](#lenslib_data) dataset covering diverse optical degradation patterns from different lens types, enabling models that generalize impressively across varied aberration distributions. We anticipate further work on universal blind aberration correction model designs building on this dataset.
+
+### How OmniLens achieves these?
+* We introduce **Evolution-based Automatic Optical Design (EAOD)** method, an automatic pipeline that generates manufacturable optical designs satisfying given specifications. This enables the construction of a large lens library that broadly covers real‑world aberration distributions.
+* We demonstrate that **Unsupervised Domain Adaptation (UDA)** effectively transfers models from a broadly generalizable LensLib pre-training domain to target lens‑specific domains. We also identify and validate **the Dark Channek Prior (DCP) property of optical degradation** and leverage it to devise our DA framework.
+
+## <a name="results"></a>:chart_with_upwards_trend: Results
+
+### AODLib-EAOD v.s. other LensLibs
+<img src=picture/table1.jpg>
+<img src=picture/figure5.jpg>
+ 
+
+### Quantitative Evaluation of the OmniLens Framework
+
+<img src=picture/table2.jpg>
+
+### Visual Results on Real-World Dataset
+
+<img src=picture/figure7.jpg>
+<img src=picture/figure8.jpg>
+
+<!-- </details> -->
+
+## <a name="setup"></a> ⚙️ Setup
 The implementation of our work is based on [BasicSR](https://github.com/xinntao/BasicSR), which is an open source toolbox for image/video restoration tasks. 
 
 - Clone this repo or download the project.
 ```bash
-git clone https://github.com/zju-jiangqi/QDMR
-cd QDMR
+git clone https://github.com/zju-jiangqi/OmniLens
+cd OmniLens
 ```
 
 - Requirements. 
@@ -55,91 +98,135 @@ cuda 11.3
 ```
 
 ```bash
-conda create -n QDMR python=3.10
-conda activate QDMR
+conda create -n OmniLens python=3.10
+conda activate OmniLens
 pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 pip install -r requirements.txt
-python setup.py develop --no_cuda_ext
+python setup.py develop
 ```
 
-#### Training
+## <a name="lenslib_data"></a> :book: LensLib Data
+Please download the AODLib-EAOD datasets from our [Huggingface](https://huggingface.co/datasets/Strange97/AODLib-EAOD).
+The downloaded AODLib-EAOD data contains 3 parts. Here are the descriptions:
+* **-Imgs**: This training ready dataset comprises 2,111 pairs of degraded and ground truth images. Each pair is produced by randomly sampling one lens from the 1,000 sampled AODLib-EAOD lenses and simulating aberration, distortion, and ISP. All pre-trained models reported in the paper are trained on this paired set.
+* **-Lens_Descriptions**: It contains PSFs (-psf) computed at 64 uniformly normalized fields of view for the 1,000 selected lenses, together with relative illumination distributions (-ill) and distortion maps (-distort), which can be used directly to simulate aberration degradation and distortion for each lens.
+* **-All_Lenses**: The unsampled raw lens library. It likewise includes the PSFs, relative illumination distributions, and distortion maps that can be used directly for simulation. The RMS spot radius and related specifications for each lens are annotated in the filenames. We recommend that interested researchers use these data to filter desired aberration degradations and construct datasets.
 
-First, train a VQGAN to learn QDMR and obtain the s2tT model.
-Check and adapt the yml file according to the path of datasets and pretrained models ```options/train/Syn2RealSim/pretrain_VQGAN.yml``` for Real-Sim (or ```options/train/Syn2RealSnap/pretrain_VQGAN.yml``` for Real-Snap), then
+<img src=picture/filename.jpg>
 
--VQGAN pretrain
+## <a name="training"></a> :wrench: Training
+### <a name="pretrain"></a> If you would like to train your own universal blind aberration correction model-Pre-Training Phase
+
+
+#### Step1: Prepare LensLib Data
+Following the instructions in [LensLib Data]("lenslib_data") to prepare AODLib-EAOD. Please modify the paths to training image pairs (-Imgs) and your target specific lens test data in `options/train/pretrain/train_SwinIR_PSNR.yml` or `options/train/pretrain/train_FeMaSR_lib.yml`
+
+#### Step2: Training a Universal Model
+We use SwinIR and FeMaSR as examples. We also recommend using any other architecture you prefer to train your universal model with our data.
+**For SwinIR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/Syn2RealSim/pretrain_VQGAN.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/pretrain/train_SwinIR_PSNR.yml --auto_resume
 ```
-or
+**For FeMaSR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/Syn2RealSnap/pretrain_VQGAN.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/pretrain/train_FeMaSR_lib.yml --auto_resume
 ```
 
-Training files (logs, models, training states and visualizations) will be saved in the directory ```./experiments/{name}```
+### <a name="finetune"></a> If you want to finetune a pre-trained universal model for a specific lens or perform unsupervised finetuning using our DA pipeline-Finetuning and DA Phase
 
-Then, use the pre-trained DMC and VQGAN to train QDMR-Base or QDMR-UDA. 
+### Lens-Specific Finetuning
 
-Our pre-trained weights are also available.
-- Download the pre-trained DMC and trained models from our [Huggingface](https://huggingface.co/datasets/Zhonghua/Realab/tree/main) or [Baidu Disk]() to './pretrain'.
+#### Step1: Prepare Your Specific Data
 
+Prepare your own lens‑specific training paired data under a specific lens.
 
--QDMR-Base:
+Please modify the paths to training image pairs and your target specific lens test data in `options/train/specific/train_SwinIR_Specific.yml` or `options/train/specific/train_FemaSR_Specific.yml`
+
+#### Step2: Prepare the Pre-Trained Universal Model
+You can download our pre-trained SwinIR and FeMaSR weights from our [Huggingface]() and place them in the `pretrain/` folder.
+Please modify the paths to the pretrained model in `options/train/specific/train_SwinIR_Specific.yml` or `options/train/specific/train_FemaSR_Specific.yml`
+
+#### Step3: Finetuning a Specific Model
+**For SwinIR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train_uda.py -opt options/train/Syn2RealSim/train_QDMR_Base.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/specific/train_SwinIR_Specific.yml --auto_resume
 ```
-or
+**For FeMaSR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train_uda.py -opt options/train/Syn2RealSnap/train_QDMR_Base.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/specific/train_FemaSR_Specific.yml --auto_resume
 ```
 
--QDMR-UDA (2 GPUs):
+### Lens-Specific DA-Training
+
+#### Step1: Prepare LensLib Data and the Unpaired Data
+Following the instructions in [LensLib Data]("lenslib_data") to prepare AODLib-EAOD （**only DA-Training needed**). 
+
+Prepare your own lens‑specific training data: several real-world images captured with the target lens (for DA-Training).
+
+Please modify the data paths in `options/train/uda/train_SwinIR_DA.yml` or `options/train/uda/train_FeMaFA_DA.yml`
+
+#### Step2: Prepare the Pre-Trained Universal Model
+You can download our pre-trained SwinIR and FeMaSR weights from our [Huggingface]() and place them in the `pretrain/` folder.
+Please modify the paths to the pretrained model in `options/train/uda/train_SwinIR_DA.yml` or `options/train/uda/train_FeMaFA_DA.yml`
+
+
+#### Step3: DA-Training
+**For SwinIR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/train_uda.py -opt options/train/Syn2RealSim/train_QDMR_UDA.yml --auto_resume
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/train.py -opt options/train/uda/train_SwinIR_DA.yml --auto_resume
 ```
-or
+**For FeMaSR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/train_uda.py -opt options/train/Syn2RealSnap/train_QDMR_UDA.yml --auto_r
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/train.py -opt options/train/uda/train_FeMaFA_DA.yml --auto_resume
 ```
 
-### Testing
-The referenced metrics and qualitative results can be calculated on Real-Sim:
-- Real-Sim:
+## <a name="inference"></a> 💫 Inference
+#### Step1: Prepare Your Opitcal Degradation Images
+Please modify the data paths in `options/test/test_SwinIR.yml` or `options/test/test_FeMaSR.yml`
+
+#### Step2: Prepare the Pre-Trained Universal Model
+You can download our pre-trained SwinIR and FeMaSR weights from our [Huggingface]() and place them in the `pretrain/` folder.
+Please modify the paths to the pretrained model in `options/test/test_SwinIR.yml` or `options/test/test_FeMaSR.yml`
+
+#### Step3: Zero-Shot Inference
+**For SwinIR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/RealSim/test_QDMR_Base.yml
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/RealSim/test_QDMR_UDA.yml
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/test_SwinIR.yml --auto_resume
 ```
-
-The non-referenced metric and qualitative results can be calculated on Real-Snap:
-- Real-Snap:
+**For FeMaSR**
+run:
 ```bash
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/RealSnap/test_QDMR_Base.yml
-PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/RealSnap/test_QDMR_UDA.yml
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0,1 python basicsr/train.py -opt options/test/test_FeMaSR.yml --auto_resume
 ```
 
-Evaluating files (logs and visualizations) will be saved in the directory ```./results/{name}```
-
-We only offer an example of the experiments on MOS-S1, where those on MOS-S2 can be implemented by changing the paths of datasets and pretrained priors.
 
 
-### License
+## :smiley: Citation
 
-This project is released under the Apache 2.0 license.
+Please cite us if our work is useful for your research.
 
-### Citation
 ```
-@misc{jiang2024realworld,
-      title={Real-World Computational Aberration Correction via Quantized Domain-Mixing Representation}, 
-      author={Qi Jiang and Zhonghua Yi and Shaohua Gao and Yao Gao and Xiaolong Qian and Hao Shi and Lei Sun and Zhijie Xu and Kailun Yang and Kaiwei Wang},
-      year={2024},
-      eprint={2403.10012},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@article{jiang2024flexible,
+  title={A Flexible Framework for Universal Computational Aberration Correction via Automatic Lens Library Generation and Domain Adaptation},
+  author={Jiang, Qi and Gao, Yao and Gao, Shaohua and Yi, Zhonghua and Sun, Lei and Shi, Hao and Yang, Kailun and Wang, Kaiwei and Bai, Jian},
+  journal={arXiv preprint arXiv:2409.05809},
+  year={2024}
 }
 ```
 
-### Acknowledgement
-This project is built based on the excellent [BasicSR](https://github.com/xinntao/BasicSR) project.
+## :notebook: License
 
-### Contact
-Should you have any questions, please contact me via `qijiang@zju.edu.cn`.
+This project is released under the [Apache 2.0 license](LICENSE).
+
+
+## :envelope: Contact
+
+If you have any questions, please feel free to contact qijiang@zju.edu.cn.
+

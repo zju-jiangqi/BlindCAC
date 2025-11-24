@@ -1,19 +1,17 @@
 # general settings
-name: VQGAN_pretrain_RealSim
-model_type: UDAVQGAN
+name: OmniLens_FeMaSR_basemodel_zs_bs8_crop256
+model_type: FeMaSRModel 
 scale: 1
-num_gpu: 1 # set num_gpu: 0 for cpu mode
+num_gpu: 1
 manual_seed: 0
 
 # dataset and data loader settings
 datasets:
   train:
-    name: MOS2K_src
-    type: UDADataset
-    dataroot_gt: datasets/Realab/Syn/S1/train
-    dataroot_lq: datasets/Realab/Syn/S1/train
-    dataroot_trg: datasets/Realab/Real-Sim/S1/train
-
+    name: AODLib-EAOD
+    type: PairedImageDataset
+    dataroot_gt: datasets/AODLib-EAOD/Imgs/gt
+    dataroot_lq: datasets/AODLib-EAOD/Imgs/train
     filename_tmpl: '{}'
     io_backend:
       type: disk
@@ -23,48 +21,50 @@ datasets:
     use_rot: true
 
     # data loader
-    num_worker_per_gpu: 8
+    num_worker_per_gpu: 4
     batch_size_per_gpu: 8
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
 
-
   val_0:
-    name: MOS2K-trg
+    name: AODLib-EAOD
     type: PairedImageDataset
-    dataroot_gt: datasets/Realab/Real-Sim/S1/val
-    dataroot_lq: datasets/Realab/Real-Sim/S1/val
+    dataroot_gt: path/your_specificdata/gt
+    dataroot_lq: path/your_specificdata/val
     io_backend:
       type: disk
 
+
 # network structures
 network_g:
-  type: UDAVQGAN
-  in_channel: 3
+  type: FeMaSRNet 
+  # type: VQOACNet_fusion
   gt_resolution: 256
   norm_type: 'gn'
   act_type: 'silu'
-  use_semantic_loss: true
-  codebook_params: # has to order from low to high
+  scale_factor: 1
+  codebook_params:
     - [32, 1024, 512]
 
-  # for HQ stage training
-  LQ_stage: false 
-  use_quantize: true
-  
+  LQ_stage: true
+  use_weight: false
+  # use_quantize: false
+  # fusion_mode: 'concat'
+  weight_alpha: -1.0
+  frozen_module_keywords: ['quantize', 'decoder_group', 'after_quant_group', 'out_conv']
+  # frozen_module_keywords: ['quantize', 'decoder_group', 'after_quant_group', 'out_conv']
+
 network_d:
   type: UNetDiscriminatorSN 
   num_in_ch: 3
 
-network_df:
-  type: UNetDiscriminatorSN
-  num_in_ch: 256
-
 # path
 path:
-  strict_load: false 
-
+  pretrain_network_hq: pretrain/priors/HQP_v2.pth
+  pretrain_network_g: 
+  pretrain_network_d: pretrain/priors/HQP_d_v2.pth
+  # resume_state: ~
 
 # training settings
 train:
@@ -81,8 +81,9 @@ train:
 
   scheduler:
     type: MultiStepLR
-    milestones: [50000, 100000, 150000, 200000, 250000, 300000, 350000]
-    gamma: 1
+    milestones: [100000, 125000, 150000, 175000]
+    # milestones: [30000, 40000, 50000, 100000]
+    gamma: 1.0
 
   total_iter: 200000
   warmup_iter: -1  # no warm up
@@ -97,34 +98,27 @@ train:
     type: LPIPSLoss
     loss_weight: !!float 1.0
     
-
   gan_opt:
     type: GANLoss
-    gan_type: lsgan
+    gan_type: hinge
     real_label_val: 1.0
     fake_label_val: 0.0
-    loss_weight: 0.1
-
-  gan_opt_f:
-    type: GANLoss
-    gan_type: lsgan
-    real_label_val: 1.0
-    fake_label_val: 0.0
-    loss_weight: 0.1
+    loss_weight: 0.01
 
 
   codebook_opt:
     loss_weight: 1.0
-
+  
   semantic_opt:
     loss_weight: 0.1 
+
 
   net_d_iters: 1
   net_d_init_iters: !!float 0 
 
 # validation settings·
 val:
-  val_freq: !!float 2e4
+  val_freq: !!float 2e6
   save_img: true
 
   metrics:
@@ -140,13 +134,11 @@ val:
       type: calculate_lpips
       crop_border: 0
       test_y_channel: false
-
 # logging settings
 logger:
   print_freq: 100
-  save_checkpoint_freq: !!float 2e4
+  save_checkpoint_freq: !!float 4e4
   use_tb_logger: true
   wandb:
     project: ~
     resume_id: ~
-

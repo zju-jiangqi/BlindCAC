@@ -14,6 +14,14 @@ import pyiqa
 _reduction_modes = ['none', 'mean', 'sum']
 
 
+def get_dark_channel(I, w):
+    
+    _, _, H, W = I.shape
+    maxpool = nn.MaxPool3d((3, w, w), stride=1, padding=(0, w // 2, w // 2))
+    dc = maxpool(0 - I[:, :, :, :])
+
+    return -dc
+
 @weighted_loss
 def l1_loss(pred, target):
     return F.l1_loss(pred, target, reduction='none')
@@ -39,6 +47,91 @@ class LPIPSLoss(nn.Module):
 
     def forward(self, x, gt):
         return self.model(x, gt) * self.loss_weight, None
+
+@LOSS_REGISTRY.register()
+class PSNRLoss(nn.Module):
+
+    def __init__(self, loss_weight=1.0, reduction='mean', toY=False):
+        super(PSNRLoss, self).__init__()
+        assert reduction == 'mean'
+        self.loss_weight = loss_weight
+        self.scale = 10 / np.log(10)
+        self.toY = toY
+        self.coef = torch.tensor([65.481, 128.553, 24.966]).reshape(1, 3, 1, 1)
+        self.first = True
+
+    def forward(self, pred, target):
+        assert len(pred.size()) == 4
+        if self.toY:
+            if self.first:
+                self.coef = self.coef.to(pred.device)
+                self.first = False
+
+            pred = (pred * self.coef).sum(dim=1).unsqueeze(dim=1) + 16.
+            target = (target * self.coef).sum(dim=1).unsqueeze(dim=1) + 16.
+
+            pred, target = pred / 255., target / 255.
+            pass
+        assert len(pred.size()) == 4
+
+        return self.loss_weight * self.scale * torch.log(((pred -target) ** 2).mean(dim=(1, 2, 3)) + 1e-8).mean()
+
+
+@LOSS_REGISTRY.register()
+class Supervised_DarkChannelLoss(nn.Module):
+    def __init__(self, window_size=15, weight=1.0):
+        super(Supervised_DarkChannelLoss, self).__init__()
+        self.window_size = window_size
+        self.weight = weight
+
+    def forward(self, dehazed_image, gt_image):
+        # 计算去雾图像的暗通道
+        dehazed_dark_channel = get_dark_channel(dehazed_image, self.window_size)
+        gt_dark_channel = get_dark_channel(gt_image, self.window_size)
+
+        # 计算暗通道损失，最小化暗通道值
+
+        # 根据权重缩放损失
+        scaled_loss = self.weight * l1_loss(dehazed_dark_channel, gt_dark_channel, None, reduction='mean')
+
+        return scaled_loss
+
+@LOSS_REGISTRY.register()
+class DarkChannelLoss(nn.Module):
+    def __init__(self, window_size=15, weight=1.0):
+        super(DarkChannelLoss, self).__init__()
+        self.window_size = window_size
+        self.weight = weight
+
+    def forward(self, dehazed_image):
+        # 计算去雾图像的暗通道
+        dehazed_dark_channel = get_dark_channel(dehazed_image, self.window_size)
+
+        # 计算暗通道损失，最小化暗通道值
+        dark_channel_loss = torch.mean(dehazed_dark_channel)
+
+        # 根据权重缩放损失
+        scaled_loss = self.weight * dark_channel_loss
+
+        return scaled_loss
+    
+@LOSS_REGISTRY.register()
+class DarkChannelLoss_ssid(nn.Module):
+    def __init__(self, window_size=15, weight=1.0):
+        super(DarkChannelLoss_ssid, self).__init__()
+        self.window_size = window_size
+        self.weight = weight
+
+    def forward(self, dehazed_image):
+        # 计算去雾图像的暗通道
+
+        # 计算暗通道损失，最小化暗通道值
+        dark_channel_loss = DCLoss(dehazed_image, self.window_size)
+
+        # 根据权重缩放损失
+        scaled_loss = self.weight * dark_channel_loss
+
+        return scaled_loss
 
 
 
@@ -99,6 +192,17 @@ class MSELoss(nn.Module):
         """
         return self.loss_weight * mse_loss(pred, target, weight, reduction=self.reduction)
 
+def DCLoss(img, patch_size):
+    """
+    calculating dark channel of image, the image shape is of N*C*W*H
+    """
+    maxpool = nn.MaxPool3d((3, patch_size, patch_size), stride=1, padding=(0, patch_size//2, patch_size//2))
+    dc = maxpool(0-img[:, None, :, :, :])
+    
+    target = Variable(torch.FloatTensor(dc.shape).zero_().cuda()) 
+     
+    loss = torch.nn.L1Loss(reduction='mean')(-dc, target)
+    return loss
 
 @LOSS_REGISTRY.register()
 class CharbonnierLoss(nn.Module):
@@ -155,6 +259,33 @@ class WeightedTVLoss(L1Loss):
 
         return loss
 
+
+
+@LOSS_REGISTRY.register()
+class KLD_Loss(nn.Module):
+    """
+    Args:
+        loss_weight (float): Loss weight for KD loss. Default: 1.0.
+    """
+
+    def __init__(self, loss_weight=1.0):
+        super(KLD_Loss, self).__init__()
+    
+        self.loss_weight = loss_weight
+        # self.temperature = temperature
+
+    def forward(self, mu, var):
+        """
+        Args:
+            S1_fea (List): contain shape (N, L) vector. 
+            S2_fea (List): contain shape (N, L) vector.
+            weight (Tensor, optional): of shape (N, C, H, W). Element-wise weights. Default: None.
+        """
+        
+        mu = mu.flatten(start_dim=1, end_dim=-1)
+        log_var = var.flatten(start_dim=1, end_dim=-1)
+        kld_loss = -0.5 * torch.mean(1 + log_var - mu**2 - log_var.exp())
+        return self.loss_weight * kld_loss
 
 @LOSS_REGISTRY.register()
 class KDLoss(nn.Module):
@@ -296,6 +427,20 @@ class PerceptualLoss(nn.Module):
         return gram
 
 
+@LOSS_REGISTRY.register()
+class FuseLoss(nn.Module):
+    def __init__(self, loss_weight=1.0, reduction='mean'):
+        super(FuseLoss, self).__init__()
+        self.irloss = L1Loss(loss_weight, reduction)
+        self.x1hatloss = L1Loss(loss_weight, reduction)
+
+    def forward(self, pred, x1hat, target):
+        Lir = self.irloss.forward(pred, target)
+        Lx1hat = self.x1hatloss.forward(x1hat, target)
+
+        L = Lir + 0.5*Lx1hat
+
+        return L
 
 @LOSS_REGISTRY.register()
 class GANLoss(nn.Module):
@@ -558,5 +703,189 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
 
+@LOSS_REGISTRY.register()
+class TVLoss(nn.Module):
+    def __init__(self,loss_weight=0.1):
+        super(TVLoss,self).__init__()
+        self.TVLoss_weight = loss_weight
+
+    def forward(self,x):
+        batch_size = x.size()[0]
+        h_x = x.size()[2]
+        w_x = x.size()[3]
+        count_h = self._tensor_size(x[:,:,1:,:])
+        count_w = self._tensor_size(x[:,:,:,1:])
+        h_tv = torch.pow((x[:,:,1:,:]-x[:,:,:h_x-1,:]),2).sum()
+        w_tv = torch.pow((x[:,:,:,1:]-x[:,:,:,:w_x-1]),2).sum()
+        return self.TVLoss_weight*2*(h_tv/count_h+w_tv/count_w)/batch_size
+
+    def _tensor_size(self,t):
+        return t.size()[1]*t.size()[2]*t.size()[3]
+
+@LOSS_REGISTRY.register()
+class L1_TVLoss_Charbonnier(nn.Module):
+
+    def __init__(self,loss_weight=0.1):
+
+        super(L1_TVLoss_Charbonnier, self).__init__()
+
+        self.e = 0.000001 ** 2
+        self.TVLoss_weight = loss_weight
 
 
+    def forward(self, x):
+
+        batch_size = x.size()[0]
+
+        h_tv = torch.abs((x[:, :, 1:, :]-x[:, :, :-1, :]))
+
+        h_tv = torch.mean(torch.sqrt(h_tv ** 2 + self.e))
+
+        w_tv = torch.abs((x[:, :, :, 1:]-x[:, :, :, :-1]))
+
+        w_tv = torch.mean(torch.sqrt(w_tv ** 2 + self.e))
+
+        return self.TVLoss_weight*(h_tv + w_tv)
+
+
+class MutualInformation(nn.Module):
+
+	def __init__(self, sigma=0.1, num_bins=256, normalize=True):
+		super(MutualInformation, self).__init__()
+
+		self.sigma = sigma
+		self.num_bins = num_bins
+		self.normalize = normalize
+		self.epsilon = 1e-10
+
+		self.bins = nn.Parameter(torch.linspace(0, 1, num_bins).float(), requires_grad=False)
+
+
+	def marginalPdf(self, values):
+
+		residuals = values - self.bins.unsqueeze(0).unsqueeze(0)
+		kernel_values = torch.exp(-0.5*(residuals / self.sigma).pow(2))
+		
+		pdf = torch.mean(kernel_values, dim=1)
+		normalization = torch.sum(pdf, dim=1).unsqueeze(1) + self.epsilon
+		pdf = pdf / normalization
+		
+		return pdf, kernel_values
+
+
+	def jointPdf(self, kernel_values1, kernel_values2):
+
+		joint_kernel_values = torch.matmul(kernel_values1.transpose(1, 2), kernel_values2) 
+		normalization = torch.sum(joint_kernel_values, dim=(1,2)).view(-1, 1, 1) + self.epsilon
+		pdf = joint_kernel_values / normalization
+
+		return pdf
+
+
+	def getMutualInformation(self, input1, input2):
+		'''
+			input1: B, C, H, W
+			input2: B, C, H, W
+
+			return: scalar
+		'''
+
+		# Torch tensors for images between (0, 1)
+		# input1 = input1*255
+		# input2 = input2*255
+        
+		B, C, H, W = input1.shape
+		assert((input1.shape == input2.shape))
+    
+		x1 = input1.view(B, H*W, C)
+		x2 = input2.view(B, H*W, C)
+		
+		pdf_x1, kernel_values1 = self.marginalPdf(x1)
+		pdf_x2, kernel_values2 = self.marginalPdf(x2)
+		pdf_x1x2 = self.jointPdf(kernel_values1, kernel_values2)
+
+		H_x1 = -torch.sum(pdf_x1*torch.log2(pdf_x1 + self.epsilon), dim=1)
+		H_x2 = -torch.sum(pdf_x2*torch.log2(pdf_x2 + self.epsilon), dim=1)
+		H_x1x2 = -torch.sum(pdf_x1x2*torch.log2(pdf_x1x2 + self.epsilon), dim=(1,2))
+
+		mutual_information = H_x1 + H_x2 - H_x1x2
+		
+		if self.normalize:
+			mutual_information = 2*mutual_information/(H_x1+H_x2)
+
+		return mutual_information
+
+
+	def forward(self, input1, input2):
+		'''
+			input1: B, C, H, W
+			input2: B, C, H, W
+
+			return: scalar
+		'''
+		Ba, C, H, W = input1.shape
+		batch_mu = torch.sum(self.getMutualInformation(input1, input2))/Ba
+        
+		return batch_mu
+
+@LOSS_REGISTRY.register()
+class maxdistanceLoss(nn.Module):
+    def __init__(self,loss_weight=0.1):
+        super(maxdistanceLoss,self).__init__()
+        self.Loss_weight = loss_weight
+        self.MI = MutualInformation(num_bins=512, sigma=0.1, normalize=True)
+
+    def forward(self,input1, input2):
+
+        return self.MI(input1, input2)
+
+
+@LOSS_REGISTRY.register()
+class mindistanceLoss(nn.Module):
+    def __init__(self,loss_weight=0.1):
+        super(mindistanceLoss,self).__init__()
+        self.Loss_weight = loss_weight
+        self.MI = MutualInformation(num_bins=512, sigma=0.1, normalize=True)
+
+    def forward(self,input1, input2):
+
+        return -self.MI(input1, input2)
+    
+@LOSS_REGISTRY.register()
+class CosineSimilarity(nn.Module):
+ 
+    def forward(self, tensor_1, tensor_2):
+        normalized_tensor_1 = tensor_1 / tensor_1.norm(dim=-1, keepdim=True)
+        normalized_tensor_2 = tensor_2 / tensor_2.norm(dim=-1, keepdim=True)
+        cos_value = (normalized_tensor_1 * normalized_tensor_2).sum(dim=-1)
+        return cos_value*cos_value
+
+import torch.nn.functional as F
+@LOSS_REGISTRY.register()
+class EdgeLoss(nn.Module):
+    def __init__(self,loss_weight = 1,reduction='mean', toY=False):
+        super(EdgeLoss, self).__init__()
+        assert reduction == 'mean'
+        k = torch.Tensor([[.05, .25, .4, .25, .05]])
+        self.kernel = torch.matmul(k.t(),k).unsqueeze(0).repeat(3,1,1,1)
+        if torch.cuda.is_available():
+            self.kernel = self.kernel.cuda()
+        self.loss = CharbonnierLoss()
+        self.loss_weight = loss_weight
+    def conv_gauss(self, img):
+        n_channels, _, kw, kh = self.kernel.shape
+        img = F.pad(img, (kw//2, kh//2, kw//2, kh//2), mode='replicate')
+        return F.conv2d(img, self.kernel, groups=n_channels)
+
+    def laplacian_kernel(self, current):
+        filtered    = self.conv_gauss(current)    # filter
+        down        = filtered[:,:,::2,::2]               # downsample
+        new_filter  = torch.zeros_like(filtered)
+        new_filter[:,:,::2,::2] = down*4                  # upsample
+        filtered    = self.conv_gauss(new_filter) # filter
+        diff = current - filtered
+        return diff
+
+    def forward(self, x, y):
+        loss = self.loss(self.laplacian_kernel(x), self.laplacian_kernel(y))
+        return self.loss_weight*loss
