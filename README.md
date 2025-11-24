@@ -66,13 +66,13 @@ A flexible framework that serves **any optical lens aberration correction**. Whe
 ## <a name="results"></a>:chart_with_upwards_trend: Results
 
 ### AODLib-EAOD v.s. other LensLibs
-<img src=picture/table1.jpg>
+<img src=picture/table1.jpg style="zoom:60%;">
 <img src=picture/figure5.jpg>
  
 
 ### Quantitative Evaluation of the OmniLens Framework
 
-<img src=picture/table2.jpg>
+<img src=picture/table2.jpg style="zoom:60%;">
 
 ### Visual Results on Real-World Dataset
 
