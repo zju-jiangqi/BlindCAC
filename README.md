@@ -69,7 +69,9 @@ You will obtain a folder organized with the following structure:
       ...     
 ```
 ``-ab``: The folder consists of images with a resolution of 1920x1280. It encapsulates the imaging results from all 3,240 lenses, with each lens applied to 40 randomly selected sharp scene images.
+
 ``-gt``: The corresponding GT images for ``-ab``, with the same resolution of 1920x1280.
+
 ``-label``: The ``.txt`` file recorded the mapping between each aberration image filename and its corresponding lens profile. The recorded lens profile can be found in the following ``AODLibpro_lens`` folder. 
 
 Due to the large volume of training data, traversing all file paths during each training session can be time-consuming. We recommend performing the following operation to pre-generate a comprehensive list of all file paths.
@@ -113,7 +115,9 @@ You will obtain a folder organized with the following structure:
 In brief, this directory contains the physical parameters describing the aberration distributions of all 3,240 training lenses. Since geometric distortion can be corrected independently, both training and test images in this challenge are distortion-free; therefore, files in the ``-distort`` can be ignored. We encourage participants to leverage the remaining physical information to assist in model training or to re-organize the data according to your own strategies.
 
 ``-ill``:Type: Torch.tensor; Shape: [64]; Description: Relative illumination at 64 normalized fields of view from center to edge.
+
 ``-psf``:Type: Torch.tensor; Shape: [64, 3, H, W]; Description: PSFs at 64 normalized fields of view from center to edge, with 3 channels (RGB) and size H×W. The provided PSF orientation points from the image center toward the downward direction, and you need to rotate the PSFs according to the specific FoV layout to complete the simulation.
+
 ``-psf_sfr``:Type: Torch.tensor; Shape: [64, 48, 67]; Description: These are the results of rotating the raw PSFs from ``-psf`` from 0° to 360° (uniformly sampled at 48 angles). We extract Spatial Frequency Response (SFR) curves from both sagittal and tangential directions for each rotated PSF. By sampling 32 discrete points from each curve and concatenating them with the Full Width at Half Maximum (FWHM) values across the RGB channels, we construct a representative feature vector (1x1x67) for each PSF. The corresponding code in our Dataset class will automatically arrange these vectors into pixel-aligned PSF maps. For a detailed description, please refer to our reference paper, OmniLens++. This procedure is merely an example of PSF processing; we welcome participants to explore alternative methods to better utilize the raw PSF files for model guidance.
 
 The filenames of these lens-related data files are consistent with those documented in the ``.txt`` files within the aforementioned ``-label`` directory. Participants can locate the corresponding lens profile for each image by referring its associated label.
@@ -126,19 +130,28 @@ The provided model directly estimates the corresponding PSF information from abe
 Following the instructions in [Data Preparation](#lenslib_data) to prepare training data. 
 
 Please modify the paths to training data in `options/train/pretrain/train_PSFguided_SwinUnet_gtpsfmap.yml`:
+
 **The lq/gt image pairs**:
+
 `dataroot_gt: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/gt`
 `dataroot_lq: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/ab`
+
 **The label indicating the specific lens to which the aberration degradation of each image belongs**:
+
 `dataroot_label: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/label`
+
 **The generated path file for the dataset:**
+
 `csv_path: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/meta_info.csv`
+
 **The PSF maps for all the training lenses:**
+
 `dataroot_abd: datasets/AODLibpro_lens/psf_sfr`
 
 Our training framework will automatically retrieve paired degraded and sharp images, along with the corresponding PSF maps, for the training process.
 
 Please also modify the validation data paths:
+
 `dataroot_gt: datasets/MixLib_demotest/hybrid/gt`
 `dataroot_lq: datasets/MixLib_demotest/hybrid/ab`
 
