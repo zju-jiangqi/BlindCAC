@@ -1,0 +1,65 @@
+name: PSFguided_SwinUnet_AODLibpro
+model_type: PSFprediction_guided_CACModel
+scale: 1
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+datasets:
+
+  test_1:
+    name: your_data
+    type: PairedImageDataset
+    dataroot_gt: /path/your_data/gt
+    dataroot_lq:  /path/your_data/test
+    # dataroot_fov: /home/strange/workspace/strange/dataset/MOS2K/fov_input.pth
+    io_backend:
+      type: disk
+
+
+
+network_g:
+  type: SwinUnet_psfprediction_cacstage
+  # type: UniCAC_prompt_multiskip
+  gt_resolution: 256
+  norm_type: 'gn'
+  act_type: 'silu'
+  scale_factor: 1
+  codebook_params:
+    - [32, 1024, 512]
+
+  LQ_stage: true
+  use_weight: false
+  weight_alpha: -1.0
+
+
+
+
+# path
+path:
+  # pretrain_network_hq: pretrain/priors/HQP_v2.pth
+  pretrain_network_g: path/your_trained_model/net_g_latest.pth
+  # param_key_g: params
+  strict_load: false
+
+# validation settings
+val:
+  save_img: true
+  suffix: ~  # add suffix to saved images, if None, use exp name
+  metrics:
+    # score: # metric name, can be arbitrary
+    #   type: calculate_score
+    #   crop_border: 0
+    #   test_y_channel: false
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim: # metric name, can be arbitrary
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+    lpips: # metric name, can be arbitrary
+      type: calculate_lpips
+      crop_border: 0
+      test_y_channel: false
+ 

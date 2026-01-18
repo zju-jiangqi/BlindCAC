@@ -1,17 +1,17 @@
 # general settings
-name: OmniLens_AODLib_SwinIRper_basemodel_zs_bs8
+name: Simplemodel_SwinIR_AODLibpro
 model_type: SwinIRModel
 scale: 1
-num_gpu: 1
+num_gpu: 2
 manual_seed: 0
 
 # dataset and data loader settings
 datasets:
   train:
-    name: AODLib-EAOD
+    name: AODLibpro
     type: PairedImageDataset
-    dataroot_gt: datasets/AODLib-EAOD/Imgs/gt
-    dataroot_lq: datasets/AODLib-EAOD/Imgs/train
+    dataroot_gt: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/ab
+    dataroot_lq: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/ab
     filename_tmpl: '{}'
     io_backend:
       type: disk
@@ -28,10 +28,10 @@ datasets:
 
 
   val_0:
-    name: AODLib-EAOD
+    name: benchmark
     type: PairedImageDataset
-    dataroot_gt: path/your_specificdata/gt
-    dataroot_lq: path/your_specificdata/val
+    dataroot_gt: datasets/MixLib_demotest/hybrid/gt
+    dataroot_lq: datasets/MixLib_demotest/hybrid/ab
     io_backend:
       type: disk
 
@@ -75,7 +75,7 @@ train:
     milestones: [100000, 160000, 180000, 190000]
     gamma: 0.5
 
-  total_iter: 200000
+  total_iter: 400000
   warmup_iter: -1  # no warm up
 
   # losses

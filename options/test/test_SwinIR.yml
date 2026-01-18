@@ -36,7 +36,7 @@ network_g:
 
 # path
 path:
-  pretrain_network_g: pretrain/pretrained/SwinIR_AODLib_EAOD.pth
+  pretrain_network_g: path/your_trained_model/net_g_latest.pth
   strict_load_g: true
   param_key_g: params_ema 
   resume_state: ~

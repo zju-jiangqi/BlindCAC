@@ -1,0 +1,181 @@
+# general settings
+name: PSFguided_SwinUnet_AODLibpro
+model_type: PSFprediction_guided_CACModel
+scale: 1
+num_gpu: 2
+manual_seed: 42
+
+datasets:
+  train:
+    name: AODLibpro
+    type: PairedImageDataset_psfabd_readcsv
+    # dataroot_gt: /home/strange/strange/dataset/LensLib/source_lib/specific/s1/gt
+    # dataroot_lq: /home/strange/strange/dataset/LensLib/source_lib/specific/s1/train
+    dataroot_gt: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/ab
+    dataroot_lq: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/ab
+    dataroot_label: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/label
+    csv_path: datasets/AODLibpro_img/MixLib_32401l40i/hybrid/meta_info.csv
+    # dataroot_abd: /home/strange/strange/dataset/OmniCAC/Lib_Data/demo100lib_abdmap_v2
+    dataroot_abd: datasets/AODLibpro_lens/psf_sfr
+    # dataroot_fov: /home/strange/workspace/strange/dataset/MOS2K/fov_input.pth
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    gt_size: 256
+    use_flip: true
+    use_rot: true
+
+    # data loader
+    num_worker_per_gpu: 8
+    batch_size_per_gpu: 8
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+
+
+  val_0:
+    name: benchmark
+    type: PairedImageDataset
+    dataroot_gt: datasets/MixLib_demotest/hybrid/gt
+    dataroot_lq: datasets/MixLib_demotest/hybrid/ab
+    io_backend:
+      type: disk
+
+
+
+
+# network structures
+network_g:
+  type: SwinUnet_psfprediction_cacstage
+  # type: UniCAC_prompt_multiskip
+  gt_resolution: 256
+  norm_type: 'gn'
+  act_type: 'silu'
+  scale_factor: 1
+  codebook_params:
+    - [32, 1024, 512]
+
+  LQ_stage: true
+  use_weight: false
+  weight_alpha: -1.0
+
+network_d:
+  type: UNetDiscriminatorSN 
+  num_in_ch: 3
+
+# network_d:
+#   type: VGGStyleDiscriminator256
+#   num_in_ch: 3
+#   num_feat: 64
+
+# path
+path:
+  # pretrain_network_hq: /home/strange/strange/workspace/UDA4CAC/experiments/OmniCAC_AODLib30001l50i_abdpsfmap5x5average_gtmap_maprecon_vq_stage2_mappredictionfromimg_bs8_seed42_cosinelr/models/net_g_180000.pth
+  # pretrain_network_g: /home/strange/strange/workspace/UDA4CAC/experiments/LensLib_libvpl_Unetbaseline4RSTB_GAN_S1/models/net_g_120000.pth
+  # pretrain_network_d: /home/strange/strange/workspace/UDA4CAC/experiments/LensLib_libvpl_Unetbaseline4RSTB_GAN_S1/models/net_d_120000.pth
+  strict_load: false 
+  # resume_state: ~
+
+# training settings
+train:
+  optim_g:
+    type: Adam
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+  optim_d:
+    type: Adam
+    lr: !!float 4e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+
+  # scheduler:
+  #   type: MultiStepLR
+  #   milestones: [50000, 100000, 150000, 175000]
+  #   # milestones: [30000, 40000, 50000, 100000]
+  #   gamma: 1.0
+
+
+  scheduler:
+    type: TrueCosineAnnealingLR
+    T_max: 200000 # 200000 for batchsize8, 260000 for batchsize6 #250000 # 300000  25w for 4 gpu, 40w for 2 gpu
+    eta_min: !!float 1e-6
+
+  total_iter: 400000
+  warmup_iter: -1  # no warm up
+
+  # losses
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0 
+    reduction: mean
+
+  # abd_opt:
+  #   type: L1Loss
+  #   loss_weight: 1.0
+  #   reduction: mean
+
+  perceptual_opt:
+    type: LPIPSLoss
+    loss_weight: !!float 1.0
+
+  # trgtv_opt:
+  #   type: TVLoss
+  #   loss_weight: !!float 0.0000
+    
+  # gan_opt:
+  #   type: GANLoss
+  #   gan_type: lsgan
+  #   real_label_val: 1.0
+  #   fake_label_val: 0.0
+  #   loss_weight: 0.01
+
+  gan_opt:
+    type: GANLoss
+    gan_type: hinge
+    real_label_val: 1.0
+    fake_label_val: 0.0
+    loss_weight: 0.00
+
+  codebook_opt:
+    loss_weight: 0.0
+  
+  # semantic_opt:
+  #   loss_weight: 0.0 
+
+
+  net_d_iters: 1
+  net_d_init_iters: !!float 0 
+
+# validation settings·
+val:
+  val_freq: !!float 2e6
+  save_img: true
+
+  metrics:
+    # score: # metric name, can be arbitrary
+    #   type: calculate_score
+    #   crop_border: 0
+    #   test_y_channel: false
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim: # metric name, can be arbitrary
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+    lpips: # metric name, can be arbitrary
+      type: calculate_lpips
+      crop_border: 0
+      test_y_channel: false
+
+# logging settings
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 4e4
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
