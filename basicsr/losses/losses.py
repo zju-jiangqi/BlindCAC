@@ -9,6 +9,38 @@ from torch.autograd import Variable
 from basicsr.archs.vgg_arch import VGGFeatureExtractor
 from basicsr.utils.registry import LOSS_REGISTRY
 from .loss_util import weighted_loss
+import inspect
+
+
+def _patch_torch_load_ignore_weights_only():
+    """Compatibility patch.
+
+    Some third-party libs (e.g. newer pyiqa) call torch.load(..., weights_only=...),
+    but older PyTorch versions (e.g. 1.12.x) don't support that kwarg.
+    """
+    # Check if weights_only is already supported
+    try:
+        sig = inspect.signature(torch.load)
+        if 'weights_only' in sig.parameters:
+            return  # Already supported, no patch needed
+    except (TypeError, ValueError):
+        # inspect.signature might fail, but we'll patch anyway
+        pass
+
+    # Save original torch.load
+    _orig_torch_load = torch.load
+
+    def _torch_load_compat(*args, **kwargs):
+        # Remove weights_only if present (for older PyTorch versions)
+        kwargs.pop('weights_only', None)
+        return _orig_torch_load(*args, **kwargs)
+
+    # Replace torch.load with patched version
+    torch.load = _torch_load_compat
+
+
+# Apply the patch before importing pyiqa
+_patch_torch_load_ignore_weights_only()
 import pyiqa
 
 _reduction_modes = ['none', 'mean', 'sum']
@@ -42,6 +74,7 @@ class LPIPSLoss(nn.Module):
     """
     def __init__(self, loss_weight = 1.0):
         super(LPIPSLoss, self).__init__()
+        _patch_torch_load_ignore_weights_only()
         self.model = pyiqa.create_metric('lpips-vgg', as_loss=True)
         self.loss_weight = loss_weight
 

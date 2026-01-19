@@ -1,7 +1,7 @@
 from torch.utils import data as data
 from torchvision.transforms.functional import normalize
 import numpy as np
-from basicsr.data.data_util import paired_paths_from_folder, paired_paths_from_lmdb, paired_paths_from_meta_info_file, generate_abd_path, downsample_with_mode
+from basicsr.data.data_util import paired_paths_from_folder, paired_paths_from_lmdb, paired_paths_from_meta_info_file
 from basicsr.data.transforms import augment, paired_random_crop
 from basicsr.data.physics_transforms import abs_random_crop, pal_random_crop, palsr_random_crop, fov_augment, abs_random_crop_cor
 from basicsr.utils import FileClient, imfrombytes, img2tensor
