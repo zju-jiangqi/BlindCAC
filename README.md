@@ -1,4 +1,4 @@
-<h2 align="center">Code for Blind Computational Aberration Correction Challenge in NTIRE 2026</h2>
+# Code for [Blind Computational Aberration Correction Challenge in NTIRE 2026](https://cvlai.net/ntire/2026/) </h2>
 
 ## :book: Introduction
 
@@ -6,7 +6,7 @@ In this challenge, we focus on blind Computational Aberration Correction (CAC), 
 
 This repository provides the demonstration code for training and testing in this challenge. Our open-source examples include a training case on utilizing the provided Point Spread Function (PSF) data to facilitate the training of the CAC model. Participants are encouraged to explore methods for leveraging lens-specific PSF data—available during training but unavailable during inference—to enhance model performance. Alternatively, we support training the CAC model directly using the provided paired image data without incorporating any additional PSF-based physical information. Furthermore, since constructing a comprehensive lens library is a critical research direction for the blind CAC task, except from the provided AODLibpro, participants are also permitted to use external lens databases to augment model training.
 
-
+If you wish to participate in this challenge, please visit the official challenge homepage on [Codabench](https://www.codabench.org/competitions/12818/) for detailed rules and regulations. Additionally, register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1T8EF3cwMvopjudNK3Ue5bDYyqi3An4XR8mD8a3_P_yc/edit?usp=sharing) and get your team ID..
 
 
 ## <a name="setup"></a> ⚙️ Setup
@@ -26,8 +26,8 @@ cuda 11.3
 ```
 
 ```bash
-conda create -n BGPCAC python=3.10
-conda activate BGPCAC
+conda create -n BlindCAC python=3.10
+conda activate BlindCAC
 pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 pip install -r requirements.txt
 python setup.py develop
@@ -202,8 +202,9 @@ PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt
 ```
 
 
-## :smile: Acknowledgement
-This project is built based on the excellent [BasicSR](https://github.com/xinntao/BasicSR) project.
+## :smile: Develop your own model and network
+This project is built based on the excellent [BasicSR](https://github.com/xinntao/BasicSR) project. 
+Based on this project, you can easily modify the training pipeline in `basicsr/models/psfconstraint_model.py`, customize the network architecture in `basicsr/archs/omnilens2_arch.py`, and adjust the data preprocessing logic in `basicsr/data/paired_imagepsf_dataset.py` as needed.
 
 ## :smiley: Citation
 
