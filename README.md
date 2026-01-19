@@ -6,9 +6,21 @@ In this challenge, we focus on blind Computational Aberration Correction (CAC), 
 
 This repository provides the demonstration code for training and testing in this challenge. Our open-source examples include a training case on utilizing the provided Point Spread Function (PSF) data to facilitate the training of the CAC model. Participants are encouraged to explore methods for leveraging lens-specific PSF data—available during training but unavailable during inference—to enhance model performance. Alternatively, we support training the CAC model directly using the provided paired image data without incorporating any additional PSF-based physical information. Furthermore, since constructing a comprehensive lens library is a critical research direction for the blind CAC task, except from the provided AODLibpro, participants are also permitted to use external lens databases to augment model training.
 
-If you wish to participate in this challenge, please visit the official challenge homepage on [Codabench](https://www.codabench.org/competitions/12818/) for detailed rules and regulations. Additionally, register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1T8EF3cwMvopjudNK3Ue5bDYyqi3An4XR8mD8a3_P_yc/edit?usp=sharing) and get your team ID..
+## 👊: Participation Guidelines
+If you wish to participate in this challenge, please visit the official challenge homepage on [Codabench](https://www.codabench.org/competitions/12818/) for detailed rules and regulations. 
 
-
+### Quick Overview: How to participate and add your model
+1. Register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1T8EF3cwMvopjudNK3Ue5bDYyqi3An4XR8mD8a3_P_yc/edit?usp=sharing) and get your team ID.
+2. This project is built based on the excellent [BasicSR](https://github.com/xinntao/BasicSR) project.
+   - Based on this project, you can easily modify the training pipeline in `basicsr/models/psfconstraint_model.py`, customize the network architecture in `basicsr/archs/omnilens2_arch.py`, adjust the data preprocessing logic in `basicsr/data/paired_imagepsf_dataset.py`, and provide your training configurations in `options/train/pretrain/train_PSFguided_SwinUnet_gtpsfmap.yml` as needed.
+   - Once you have finalized your approach, please rename the modified files listed above as `basicsr/models/[Your_Team_ID]_[Your_Model_Name]_model.py`, `basicsr/archs/[Your_Team_ID]_[Your_Model_Name]_arch.py`, `basicsr/data/[Your_Team_ID]_[Your_Model_Name]_dataset.py`, and `options/train/pretrain/train_[Your_Team_ID]_[Your_Model_Name].yml`. This standardization is necessary to facilitate our subsequent code consolidation and review process.
+   - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02
+3. Put the pretrained model in `modelzoo/[Your_Team_ID]_[Your_Model_Name].[pth or pt or ckpt]`
+   - If the folder does not exist in the downloaded template, please create it manually.
+   - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02  
+4. Send us the command to download your code, e.g, 
+   - `git clone [Your repository link]`
+   - We will add your code and model checkpoint to the repository.
 ## <a name="setup"></a> ⚙️ Setup
 The implementation of our work is based on [BasicSR](https://github.com/xinntao/BasicSR), which is an open source toolbox for image/video restoration tasks. 
 
