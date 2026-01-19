@@ -213,11 +213,6 @@ run:
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/test_PSFguided_SwinUnet.yml --auto_resume
 ```
 
-
-## :smile: Develop your own model and network
-This project is built based on the excellent [BasicSR](https://github.com/xinntao/BasicSR) project. 
-Based on this project, you can easily modify the training pipeline in `basicsr/models/psfconstraint_model.py`, customize the network architecture in `basicsr/archs/omnilens2_arch.py`, and adjust the data preprocessing logic in `basicsr/data/paired_imagepsf_dataset.py` as needed.
-
 ## :smiley: Citation
 
 If you find this repository useful in your project, please consider giving a :star:, and cite the corresponding paper:
