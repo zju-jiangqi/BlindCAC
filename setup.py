@@ -5,8 +5,6 @@ from setuptools import find_packages, setup
 import os
 import subprocess
 import time
-import torch
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
 
 version_file = 'basicsr/version.py'
 
@@ -81,6 +79,10 @@ def get_version():
 
 
 def make_cuda_ext(name, module, sources, sources_cuda=None):
+    # Lazy import torch to avoid import error during build requirements phase
+    import torch
+    from torch.utils.cpp_extension import CppExtension, CUDAExtension
+    
     if sources_cuda is None:
         sources_cuda = []
     define_macros = []
@@ -114,8 +116,19 @@ def get_requirements(filename='requirements.txt'):
 
 
 if __name__ == '__main__':
+    # Lazy import torch to avoid import error during build requirements phase
+    try:
+        import torch
+        from torch.utils.cpp_extension import BuildExtension
+        torch_available = True
+    except ImportError:
+        BuildExtension = None
+        torch_available = False
+    
     cuda_ext = os.getenv('BASICSR_EXT')  # whether compile cuda ext
     if cuda_ext == 'True':
+        if not torch_available:
+            raise ImportError('PyTorch is required to build CUDA extensions. Please install torch first.')
         ext_modules = [
             make_cuda_ext(
                 name='deform_conv_ext',
@@ -137,6 +150,13 @@ if __name__ == '__main__':
         ext_modules = []
 
     write_version_py()
+    
+    cmdclass = {}
+    if ext_modules and BuildExtension is not None:
+        cmdclass['build_ext'] = BuildExtension
+    elif ext_modules and BuildExtension is None:
+        raise ImportError('PyTorch is required to build extensions. Please install torch first.')
+    
     setup(
         name='basicsr',
         version=get_version(),
@@ -161,5 +181,5 @@ if __name__ == '__main__':
         setup_requires=['cython', 'numpy'],
         install_requires=get_requirements(),
         ext_modules=ext_modules,
-        cmdclass={'build_ext': BuildExtension},
+        cmdclass=cmdclass,
         zip_safe=False)

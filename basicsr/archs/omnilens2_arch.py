@@ -6,7 +6,7 @@ import math
 from einops import rearrange
 from basicsr.utils.registry import ARCH_REGISTRY
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from .network_swinir import RSTB, CrossWindowAttention, window_partition, window_reverse, PRSTB
+from .network_swinir import RSTB, window_partition, window_reverse
 from .fema_utils import ResBlock, CombineQuantBlock, ResBlock_wz 
 from .vgg_arch import VGGFeatureExtractor
 import numbers
@@ -381,8 +381,8 @@ class SwinUnet_psfprediction_cacstage(nn.Module):
 
         _, _, h_old, w_old = input.shape
 
-        output, _ = self.encode_and_decode_test(input, None, None)
-
+        # output, _ = self.encode_and_decode_test(input, None, None)
+        output, _ = self.encode_and_decode_test(input)
         if output is not None:
             output = output[..., :h_old, :w_old]
         # if output_vq is not None:
